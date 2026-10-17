@@ -1,11 +1,6 @@
 import { NS } from "@ns";
-import { readTargets, createTarget, writeTargets } from "./targets";
-
-const WORKER_SCRIPTS = [
-  "/scripts/weaken.js",
-  "/scripts/grow.js",
-  "/scripts/hack.js",
-];
+import { readTargets, createTarget, writeTargets } from "./libs/targets";
+import { getAllWorkerPaths } from "./libs/workers";
 
 export function autocomplete(data: { servers: any; }, args: any) {
   const servers = data.servers;
@@ -26,7 +21,7 @@ export async function main(ns: NS): Promise<void> {
         if (existingNames.has(serverName)) continue;
         pwn_server(ns, serverName);
         
-        for (const script of WORKER_SCRIPTS) await ns.scp(script, serverName); // Copy all three worker scripts
+        for (const script of getAllWorkerPaths()) await ns.scp(script, serverName);
         
         targets.push(createTarget(ns, serverName));
         ns.tprint(`PWNed: ${serverName}`);
