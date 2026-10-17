@@ -1,5 +1,3 @@
-import { NS } from "@ns";
-
 const MIN_SECURITY_OFFSET = 0.5;
 const MAX_MONEY_PERCENT = 0.9;
 
