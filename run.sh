@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 touch NetscriptDefinitions.d.ts
-docker compose up --build --detach
+podman compose up --build --detach
