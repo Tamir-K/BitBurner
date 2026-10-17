@@ -6,7 +6,6 @@ const WORKER_SCRIPTS = [
   "/scripts/grow.js",
   "/scripts/hack.js",
 ];
-const TARGET_FILE = "/targets.json";
 
 export function autocomplete(data: { servers: any; }, args: any) {
   const servers = data.servers;
