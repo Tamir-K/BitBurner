@@ -6,9 +6,12 @@ export function autocomplete(data: { servers: any; }, args: any) {
 }
 
 export async function main(ns: NS): Promise<void> {
+    const workerScript = "/scripts/worker.js";
+    
     for (const target of ns.args) {
         const serverName = String(target);
         ns.nuke(serverName);
-        ns.tprint(`Nuked: ${serverName}`);
+        await ns.scp(workerScript, serverName);
+        ns.tprint(`PWNed: ${serverName}`);
     }
 }

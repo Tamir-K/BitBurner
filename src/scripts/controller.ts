@@ -19,19 +19,14 @@ export async function main(ns: NS): Promise<void> {
         ? "grow"
         : "hack";
 
-  let targets = JSON.parse(ns.read(targetFile) || "[]") as {
-    name: string;
-    maxRam: number;
-    baseSecurity: number;
-    maxMoney: number;
-  }[];
-
-  for (const target of targets) {
-    await ns.scp(workerScript, target.name);
-  }
 
   while (true) {
-    targets = JSON.parse(ns.read(targetFile) || "[]") as typeof targets;
+    const targets = JSON.parse(ns.read(targetFile) || "[]") as {
+      name: string;
+      maxRam: number;
+      baseSecurity: number;
+      maxMoney: number;
+    }[];
 
     for (const target of targets) {
       const usedRam = ns.getServerUsedRam(target.name);
