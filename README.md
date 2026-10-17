@@ -1,6 +1,6 @@
 # Bitburner Scripts
 
-A personal collection of TypeScript scripts for [Bitburner](https://bitburner.com/).
+A personal collection of TypeScript scripts for [Bitburner](https://store.steampowered.com/app/1812820/Bitburner/).
 
 This repository is based on the [official Bitburner TypeScript template](https://github.com/bitburner-official/typescript-template) and uses its Docker-based setup to compile and sync scripts with the game.
 
