@@ -1,9 +1,13 @@
 import { NS } from "@ns";
 
-const WORKER_SCRIPT = "/scripts/worker.js";
+const WORKER_SCRIPTS = [
+  "/scripts/weaken.js",
+  "/scripts/grow.js",
+  "/scripts/hack.js",
+];
 const TARGET_FILE = "/targets.json";
 
-type Target = {
+interface Target {
   name: string;
   maxRam: number;
   baseSecurity: number;
@@ -31,7 +35,11 @@ export async function main(ns: NS): Promise<void> {
         if (existingNames.has(serverName)) continue;
         
         ns.nuke(serverName);
-        await ns.scp(WORKER_SCRIPT, serverName);
+        
+        // Copy all three worker scripts
+        for (const script of WORKER_SCRIPTS) {
+            await ns.scp(script, serverName);
+        }
         
         targets.push({
             name: serverName,
