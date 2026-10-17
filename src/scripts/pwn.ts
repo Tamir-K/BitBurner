@@ -1,4 +1,5 @@
 import { NS } from "@ns";
+import { readTargets, createTarget, writeTargets } from "./targets";
 
 const WORKER_SCRIPTS = [
   "/scripts/weaken.js",
@@ -7,50 +8,30 @@ const WORKER_SCRIPTS = [
 ];
 const TARGET_FILE = "/targets.json";
 
-interface Target {
-  name: string;
-  maxRam: number;
-  baseSecurity: number;
-  maxMoney: number;
-};
-
 export function autocomplete(data: { servers: any; }, args: any) {
   const servers = data.servers;
   return [...servers]; 
 }
 
+function pwn_server(ns: NS, serverName: string) {
+    if(ns.fileExists("BruteSSH.exe")) ns.brutessh(serverName);
+    ns.nuke(serverName);
+}
+
 export async function main(ns: NS): Promise<void> {
-    // Load existing targets
-    let targets: Target[] = [];
-    if (ns.fileExists(TARGET_FILE)) {
-        const data = ns.read(TARGET_FILE);
-        targets = JSON.parse(data);
-    }
-    
+    let targets = await readTargets(ns);
     const existingNames = new Set(targets.map(t => t.name));
     
     for (const target of ns.args) {
         const serverName = String(target);
-        
         if (existingNames.has(serverName)) continue;
+        pwn_server(ns, serverName);
         
-        ns.nuke(serverName);
+        for (const script of WORKER_SCRIPTS) await ns.scp(script, serverName); // Copy all three worker scripts
         
-        // Copy all three worker scripts
-        for (const script of WORKER_SCRIPTS) {
-            await ns.scp(script, serverName);
-        }
-        
-        targets.push({
-            name: serverName,
-            maxRam: ns.getServerMaxRam(serverName),
-            baseSecurity: ns.getServerBaseSecurityLevel(serverName),
-            maxMoney: ns.getServerMaxMoney(serverName),
-        });
-        
+        targets.push(createTarget(ns, serverName));
         ns.tprint(`PWNed: ${serverName}`);
     }
     
-    // Write updated targets back
-    await ns.write(TARGET_FILE, JSON.stringify(targets, null, 2), "w");
+    writeTargets(ns, targets);
 }

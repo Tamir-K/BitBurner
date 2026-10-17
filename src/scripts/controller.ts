@@ -1,4 +1,5 @@
 import { NS } from "@ns";
+import { readTargets } from "./targets";
 
 const MIN_SECURITY_OFFSET = 0.5;
 const MAX_MONEY_PERCENT = 0.9;
@@ -9,20 +10,11 @@ interface WorkerAction {
   ram: number;
 }
 
-interface Target {
-  name: string;
-  maxRam: number;
-  baseSecurity: number;
-  maxMoney: number;
-}
-
 const ACTIONS: Record<"weaken" | "grow" | "hack", WorkerAction> = {
   weaken: {script: "/scripts/weaken.js", ram: 0},
   grow: {script: "/scripts/grow.js", ram: 0},
   hack: {script: "/scripts/hack.js", ram: 0},
 };
-
-const TARGET_FILE = "/targets.json";
 
 export async function main(ns: NS): Promise<void> {
   // Populate RAM costs
@@ -43,7 +35,7 @@ export async function main(ns: NS): Promise<void> {
         : ACTIONS.hack;
 
   while (true) {
-    const targets = JSON.parse(ns.read(TARGET_FILE) || "[]") as Target[];
+    const targets = await readTargets(ns);
 
     for (const target of targets) {
       const usedRam = ns.getServerUsedRam(target.name);
