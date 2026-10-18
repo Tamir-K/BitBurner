@@ -5,12 +5,6 @@ import { WORKERS, chooseWorker } from "./libs/workers";
 const SLEEP_MS = 100;
 
 export async function main(ns: NS): Promise<void> {
-  // Populate RAM costs
-  WORKERS.weaken.ram = ns.getScriptRam(WORKERS.weaken.path);
-  WORKERS.grow.ram = ns.getScriptRam(WORKERS.grow.path);
-  WORKERS.hack.ram = ns.getScriptRam(WORKERS.hack.path);
-
-
   while (true) {
     const targets = await readTargets(ns);
 

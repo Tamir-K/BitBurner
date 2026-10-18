@@ -9,9 +9,9 @@ export interface WorkerScript {
 }
 
 export const WORKERS: Record<WorkerAction, WorkerScript> = {
-    weaken: {path: "/scripts/weaken.js", ram: 0},
-    grow: {path: "/scripts/grow.js", ram: 0},
-    hack: {path: "/scripts/hack.js", ram: 0},
+    weaken: {path: "/scripts/weaken.js", ram: 1.75},
+    grow: {path: "/scripts/grow.js", ram: 1.75},
+    hack: {path: "/scripts/hack.js", ram: 1.7},
 };
 
 export function getAllWorkerPaths(): string[] {
