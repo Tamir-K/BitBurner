@@ -1,6 +1,6 @@
 import { NS } from "@ns";
 import { readTargets } from "./libs/targets";
-import { WORKERS, chooseWorker } from "./libs/workers";
+import { chooseWorker } from "./libs/workers";
 
 const SLEEP_MS = 100;
 
