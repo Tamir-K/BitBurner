@@ -8,6 +8,7 @@ export function autocomplete(data: { servers: any; }, args: any) {
 }
 
 function pwn_server(ns: NS, serverName: string) {
+    if(ns.fileExists("FTPCrack.exe")) ns.ftpcrack(serverName);
     if(ns.fileExists("BruteSSH.exe")) ns.brutessh(serverName);
     ns.nuke(serverName);
 }
