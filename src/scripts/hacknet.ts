@@ -7,7 +7,6 @@ interface UpgradeOption {
 }
 
 const BUDGET_LIMIT = 0.33;
-const SLEEP_MS = 100;
 
 function getUpgradeOptions(ns: NS, node: number): Array<[number, () => boolean]> {
   return [
