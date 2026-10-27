@@ -1,4 +1,5 @@
 import { NS } from "@ns";
+import { sleep } from "./libs/sleep";
 
 interface UpgradeOption {
   cost: number;
@@ -39,6 +40,6 @@ export async function main(ns: NS): Promise<void> {
   while (true) {
     const cheapest = getCheapest(ns);
     if (cheapest.cost < ns.getPlayer().money * BUDGET_LIMIT) cheapest.action();
-    await ns.sleep(SLEEP_MS);
+    await sleep(ns);
   }
 }

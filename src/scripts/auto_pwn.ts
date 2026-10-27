@@ -1,4 +1,5 @@
 import { NS } from "@ns";
+import { sleep } from "./libs/sleep";
 
 function scanNetwork(ns: NS): string[] {
   const visited = new Set<string>(["home"]);
@@ -25,6 +26,6 @@ export async function main(ns: NS): Promise<void> {
 
   while (true) {
     ns.run("/scripts/pwn.js", 1, ...servers);
-    await ns.sleep(60_000);
+    await sleep(ns);
   }
 }

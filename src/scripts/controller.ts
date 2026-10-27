@@ -1,8 +1,7 @@
 import { NS } from "@ns";
 import { readTargets } from "./libs/targets";
 import { chooseWorker } from "./libs/workers";
-
-const SLEEP_MS = 100;
+import { sleep } from "./libs/sleep";
 
 export async function main(ns: NS): Promise<void> {
   while (true) {
@@ -22,6 +21,6 @@ export async function main(ns: NS): Promise<void> {
       if (threads > 0) ns.exec(action.path, target.name, threads);
     }
 
-    await ns.sleep(SLEEP_MS);
+    await sleep(ns);
   }
 }
