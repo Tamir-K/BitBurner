@@ -39,7 +39,7 @@ function getCheapest(ns: NS): UpgradeOption {
 export async function main(ns: NS): Promise<void> {
   while (true) {
     const cheapest = getCheapest(ns);
-    if (cheapest.cost < ns.getPlayer().money * BUDGET_LIMIT) cheapest.action();
-    await sleep(ns);
+    while (cheapest.cost > ns.getPlayer().money * BUDGET_LIMIT) await sleep(ns);
+    cheapest.action();
   }
 }
