@@ -1,7 +1,6 @@
 import { NS } from "@ns";
 import { readTargets, Target } from "./libs/targets";
 import { chooseWorker } from "./libs/workers";
-import { sleep } from "./libs/sleep";
 
 function actOnTarget(ns: NS, target: Target) {
   if (ns.getHackingLevel() < target.hackingLevel) return;
@@ -18,9 +17,5 @@ function actOnTarget(ns: NS, target: Target) {
 }
 
 export async function main(ns: NS): Promise<void> {
-  while (true) {
-    const targets = await readTargets(ns);
-    for (const target of targets) actOnTarget(ns, target);
-    await sleep(ns);
-  }
+  while (true) (await readTargets(ns)).forEach(target => actOnTarget(ns, target));
 }
