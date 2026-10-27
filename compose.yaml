@@ -1,11 +1,9 @@
 services:
-  bitburner-filesync:
-    build:
-      context: .
-    image: bitburner-typescript
-    container_name: bitburner-filesync
+  filesync:
+    image: node:latest
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
     ports:
       - "12525:12525"
-    volumes:
-      - ./src:/app/src
-      - ./NetscriptDefinitions.d.ts:/app/NetscriptDefinitions.d.ts
+    command: ["npx", "--yes", "bitburner-filesync"]
