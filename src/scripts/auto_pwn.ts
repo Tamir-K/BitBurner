@@ -25,7 +25,7 @@ export async function main(ns: NS): Promise<void> {
   const servers = scanNetwork(ns).filter((server) => server !== "home");
 
   while (true) {
-    ns.run("/scripts/pwn.js", 1, ...servers);
+    ns.run("/scripts/pwn.ts", 1, ...servers);
     await sleep(ns);
   }
 }
