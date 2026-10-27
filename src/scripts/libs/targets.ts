@@ -7,6 +7,7 @@ export interface Target {
   maxRam: number;
   baseSecurity: number;
   maxMoney: number;
+  hackingLevel: number;
 }
 
 export async function readTargets(ns: NS): Promise<Target[]> {
@@ -25,5 +26,6 @@ export function createTarget(ns: NS, serverName: string): Target {
     maxRam: ns.getServerMaxRam(serverName),
     baseSecurity: ns.getServerBaseSecurityLevel(serverName),
     maxMoney: ns.getServerMaxMoney(serverName),
+    hackingLevel: ns.getServerRequiredHackingLevel(serverName),
   };
 }
