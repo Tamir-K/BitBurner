@@ -6,7 +6,7 @@ interface UpgradeOption {
   action: () => boolean;
 }
 
-const BUDGET_LIMIT = 0.33;
+const BUDGET_LIMIT = 0.66;
 
 function getUpgradeOptions(ns: NS, node: number): Array<[number, () => boolean]> {
   return [
