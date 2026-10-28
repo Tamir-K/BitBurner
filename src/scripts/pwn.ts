@@ -30,6 +30,7 @@ export async function main(ns: NS): Promise<void> {
 
     for (const target of ns.args.map(arg => String(arg))) {
         if (existingNames.has(target)) continue;
+        if (ns.getHackingLevel() < ns.getServerRequiredHackingLevel(target)) return;
         pwn_server(ns, target);
 
         if (ns.hasRootAccess(target)) {
