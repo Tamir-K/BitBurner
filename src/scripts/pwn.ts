@@ -7,21 +7,9 @@ export function autocomplete(data: { servers: any; }, args: any) {
     return [...servers];
 }
 
-function getCracks(ns: NS) {
-    return {
-        "BruteSSH.exe": ns.brutessh,
-        "FTPCrack.exe": ns.ftpcrack,
-        "relaySMTP.exe": ns.relaysmtp,
-        "HTTPWorm.exe": ns.httpworm,
-        "SQLInject.exe": ns.sqlinject,
-        "NUKE.exe": ns.nuke
-    };
-}
-
 function pwn_server(ns: NS, serverName: string) {
-    for (const [file, program] of Object.entries(getCracks(ns))) {
-        if (ns.fileExists(file)) program(serverName);
-    }
+    const cracks = [ns.brutessh, ns.ftpcrack, ns.relaysmtp, ns.httpworm, ns.sqlinject, ns.nuke];
+    cracks.forEach((crack) => crack(serverName));
 }
 
 export async function main(ns: NS): Promise<void> {
