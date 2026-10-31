@@ -1,26 +1,8 @@
 import { NS } from "@ns";
+import { findPath } from "./libs/network_graph";
 
 export function autocomplete(data: { servers: any; }, args: any) {
     return data.servers;
-}
-
-function dfsScan(ns: NS, server: string, target: string, route: string[], visited = new Set<string>()): boolean {
-    if (visited.has(server)) return false;
-    visited.add(server);
-    route.push(server);
-
-    if (server === target) {
-        return true;
-    }
-
-    for (const neighbor of ns.scan(server)) {
-        if (!visited.has(neighbor) && dfsScan(ns, neighbor, target, route, visited)) {
-            return true;
-        }
-    }
-
-    route.pop();
-    return false;
 }
 
 export async function main(ns: NS): Promise<void> {
@@ -33,7 +15,5 @@ export async function main(ns: NS): Promise<void> {
         return;
     }
     
-    let route: string[] = [];
-    dfsScan(ns, 'home', server, route);
-    ns.tprint(route.join(' -> '))
+    ns.tprint(findPath(ns, server).join(' -> '))
 }
