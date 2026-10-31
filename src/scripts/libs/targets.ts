@@ -10,9 +10,7 @@ export interface Target {
 }
 
 export async function readTargets(ns: NS): Promise<Target[]> {
-  if (!ns.fileExists(TARGET_FILE)) return [];
-  const data = ns.read(TARGET_FILE);
-  return JSON.parse(data) as Target[];
+  return JSON.parse(ns.read(TARGET_FILE) || "[]") as Target[];
 }
 
 export async function writeTargets(ns: NS, targets: Target[]): Promise<void> {

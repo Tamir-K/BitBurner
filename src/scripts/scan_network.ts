@@ -1,7 +1,7 @@
 import { NS } from "@ns";
 import { NetworkGraph } from "./libs/network_graph";
 
-function scanNetworkGraph(ns: NS): NetworkGraph {
+function scanNetworkGraph(ns: NS): any {
     const visited = new Set<string>(["home"]);
     const queue = ["home"];
     const adjacencyList: { [key: string]: string[] } = {};
@@ -19,11 +19,11 @@ function scanNetworkGraph(ns: NS): NetworkGraph {
         }
     }
 
-    return { adjacencyList };
+    return adjacencyList;
 }
 
 export async function main(ns: NS): Promise<void> {
     const graph = scanNetworkGraph(ns);
     ns.write("network-graph.json", JSON.stringify(graph, null, 2), "w");
-    ns.tprint(`Network scanned. ${Object.keys(graph.adjacencyList).length} nodes found.`);
+    ns.tprint(`Network scanned. ${Object.keys(graph).length} nodes found.`);
 }

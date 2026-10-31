@@ -1,8 +1,6 @@
 import { NS } from "@ns";
 
-export interface NetworkGraph {
-    adjacencyList: { [key: string]: string[] };
-}
+export type NetworkGraph = { [key: string]: string[] };
 
 function loadGraph(ns: NS): NetworkGraph {
     const data = ns.read("network-graph.json");
@@ -14,12 +12,12 @@ function loadGraph(ns: NS): NetworkGraph {
 
 export function getAllServers(ns: NS): string[] {
     const graph = loadGraph(ns);
-    return Object.keys(graph.adjacencyList).filter((node) => node !== "home");
+    return Object.keys(graph).filter((node) => node !== "home");
 }
 
 export function findPath(ns: NS, target: string): string[] {
     const graph = loadGraph(ns);
-    const nodes = Object.keys(graph.adjacencyList);
+    const nodes = Object.keys(graph);
 
     if (!nodes.includes(target)) {
         return [];
@@ -40,7 +38,7 @@ export function findPath(ns: NS, target: string): string[] {
         if (visited.has(node)) continue;
         visited.add(node);
 
-        for (const neighbor of graph.adjacencyList[node] || []) {
+        for (const neighbor of graph[node] || []) {
             if (!visited.has(neighbor)) {
                 queue.push({ node: neighbor, path: [...path, neighbor] });
             }
