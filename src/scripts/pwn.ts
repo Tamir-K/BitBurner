@@ -1,6 +1,6 @@
 import { NS } from "@ns";
 import { readTargets, createTarget, writeTargets } from "./libs/targets";
-import { getAllWorkerPaths } from "./libs/workers";
+import { WORKER_PATH } from "./libs/workers";
 import { getAllServers } from "./libs/network_graph";
 
 export function autocomplete(data: { servers: any; }, args: any) {
@@ -31,7 +31,7 @@ export async function main(ns: NS): Promise<void> {
         if (!canCrackServer(ns, server)) continue;
 
         crackServer(ns, server);
-        await ns.scp(getAllWorkerPaths(), server);
+        await ns.scp(WORKER_PATH, server);
 
         if (ns.hasRootAccess(server)) {
             targets.push(createTarget(ns, server));

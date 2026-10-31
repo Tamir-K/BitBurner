@@ -3,23 +3,11 @@ const MAX_MONEY_PERCENT = 0.9;
 
 export type WorkerAction = "weaken" | "grow" | "hack";
 
-export interface WorkerScript {
-    path: string;
-    ram: number;
-}
+export const WORKER_PATH = "/scripts/worker.ts";
+export const WORKER_RAM_COSTS: Record<WorkerAction, number> = { weaken: 1.75, grow: 1.75, hack: 1.7 };
 
-export const WORKERS: Record<WorkerAction, WorkerScript> = {
-    weaken: {path: "/scripts/weaken.ts", ram: 1.75},
-    grow: {path: "/scripts/grow.ts", ram: 1.75},
-    hack: {path: "/scripts/hack.ts", ram: 1.7},
-};
-
-export function getAllWorkerPaths(): string[] {
-    return Object.values(WORKERS).map((w) => w.path);
-}
-
-export function chooseWorker(currentSecurity: number, baseSecurity: number, currentMoney: number, maxMoney: number): WorkerScript {
-  if (currentSecurity > baseSecurity + MIN_SECURITY_OFFSET) return WORKERS["weaken"];
-  if (currentMoney < maxMoney * MAX_MONEY_PERCENT) return WORKERS["grow"];
-  return WORKERS["hack"];
+export function chooseWorker(currentSecurity: number, baseSecurity: number, currentMoney: number, maxMoney: number): WorkerAction {
+    if (currentSecurity > baseSecurity + MIN_SECURITY_OFFSET) return "weaken";
+    if (currentMoney < maxMoney * MAX_MONEY_PERCENT) return "grow";
+    return "hack";
 }
