@@ -31,7 +31,7 @@ export async function main(ns: NS): Promise<void> {
         if (!canCrackServer(ns, server)) continue;
 
         crackServer(ns, server);
-        await ns.scp(WORKER_PATH, server);
+        ns.scp(WORKER_PATH, server);
 
         if (ns.hasRootAccess(server)) {
             targets.push(createTarget(ns, server));
