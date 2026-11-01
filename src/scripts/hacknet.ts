@@ -13,7 +13,6 @@ function getUpgradeOptions(ns: NS, node: number): Array<[number, () => boolean]>
         [ns.hacknet.getLevelUpgradeCost(node), () => ns.hacknet.upgradeLevel(node)],
         [ns.hacknet.getRamUpgradeCost(node), () => ns.hacknet.upgradeRam(node)],
         [ns.hacknet.getCoreUpgradeCost(node), () => ns.hacknet.upgradeCore(node)],
-        [ns.hacknet.getCacheUpgradeCost(node), () => ns.hacknet.upgradeCache(node)],
     ];
 }
 
