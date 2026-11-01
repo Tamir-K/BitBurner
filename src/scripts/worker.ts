@@ -11,6 +11,9 @@ export async function main(ns: NS): Promise<void> {
         case "weaken":
             await ns.weaken(ns.args[1] as string);
             break;
+        case "share":
+            await ns.share();
+            break;
         default:
             ns.tprint(`Unknown action: ${ns.args[0]}`);
     }
