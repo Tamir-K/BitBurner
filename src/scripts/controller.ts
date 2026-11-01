@@ -1,23 +1,41 @@
 import { NS } from "@ns";
 import { readTargets, Target } from "./libs/targets";
-import { chooseWorker, WORKER_PATH, WORKER_RAM_COSTS } from "./libs/workers";
 import { sleep } from "./libs/sleep";
 
+const MIN_SECURITY_OFFSET = 0.5;
+const MAX_MONEY_PERCENT = 0.9;
+const WORKER_PATH = "/scripts/worker.ts";
+
+const WORKER_CONFIGS = {
+    weaken: { action: "weaken", ram: 1.75 },
+    grow: { action: "grow", ram: 1.75 },
+    hack: { action: "hack", ram: 1.7 },
+} as const;
+
+function chooseWorker(currentSecurity: number, baseSecurity: number, currentMoney: number, maxMoney: number) {
+    if (currentSecurity > baseSecurity + MIN_SECURITY_OFFSET) return WORKER_CONFIGS.weaken;
+    if (currentMoney < maxMoney * MAX_MONEY_PERCENT) return WORKER_CONFIGS.grow;
+    return WORKER_CONFIGS.hack;
+}
+
+function getAvailableRam(ns: NS, server: Target): number {
+    return server.maxRam - ns.getServerUsedRam(server.name);
+}
+
 function actOnTarget(ns: NS, target: Target) {
-  const availableRam = target.maxRam - ns.getServerUsedRam(target.name);
-  const currentSecurity = ns.getServerSecurityLevel(target.name);
-  const currentMoney = ns.getServerMoneyAvailable(target.name);
-  const action = chooseWorker(currentSecurity, target.baseSecurity, currentMoney, target.maxMoney);
-  const threads = Math.floor(availableRam / WORKER_RAM_COSTS[action]);
+    const currentSecurity = ns.getServerSecurityLevel(target.name);
+    const currentMoney = ns.getServerMoneyAvailable(target.name);
+    const worker = chooseWorker(currentSecurity, target.baseSecurity, currentMoney, target.maxMoney);
+    const threads = Math.floor(getAvailableRam(ns, target) / worker.ram);
 
-  if (threads <= 0) return;
+    if (threads <= 0) return;
 
-  ns.exec(WORKER_PATH, target.name, { "threads": threads, ramOverride: WORKER_RAM_COSTS[action] }, action);
+    ns.exec(WORKER_PATH, target.name, { "threads": threads, ramOverride: worker.ram }, worker.action);
 }
 
 export async function main(ns: NS): Promise<void> {
-  while (true) {
-    (await readTargets(ns)).forEach(target => actOnTarget(ns, target));
-    await sleep(ns);
-  }
+    while (true) {
+        (await readTargets(ns)).forEach(target => actOnTarget(ns, target));
+        await sleep(ns);
+    }
 }
