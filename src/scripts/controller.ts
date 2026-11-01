@@ -1,5 +1,5 @@
 import { NS } from "@ns";
-import { readTargets, Target } from "./libs/targets";
+import { chooseBestTarget, readTargets, Target } from "./libs/targets";
 import { sleep } from "./libs/sleep";
 import { getWorkerConfig, WORKER_PATH } from "./libs/workers";
 
@@ -7,20 +7,22 @@ function getAvailableRam(ns: NS, server: Target): number {
     return server.maxRam - ns.getServerUsedRam(server.name);
 }
 
-function actOnTarget(ns: NS, target: Target) {
+function actOnTarget(ns: NS, bot: Target, target: Target): void {
     const currentSecurity = ns.getServerSecurityLevel(target.name);
     const currentMoney = ns.getServerMoneyAvailable(target.name);
     const worker = getWorkerConfig(currentSecurity, target.baseSecurity, currentMoney, target.maxMoney);
-    const threads = Math.floor(getAvailableRam(ns, target) / worker.ram);
+    const threads = Math.floor(getAvailableRam(ns, bot) / worker.ram);
 
     if (threads <= 0) return;
 
-    ns.exec(WORKER_PATH, target.name, { "threads": threads, ramOverride: worker.ram }, worker.action);
+    ns.exec(WORKER_PATH, bot.name, { "threads": threads, ramOverride: worker.ram }, worker.action, target.name);
 }
 
 export async function main(ns: NS): Promise<void> {
     while (true) {
-        (await readTargets(ns)).forEach(target => actOnTarget(ns, target));
+        const bots = await readTargets(ns);
+        const target = await chooseBestTarget(bots, Math.ceil(ns.getHackingLevel() / 2));
+        bots.forEach(bot => actOnTarget(ns, bot, target));
         await sleep(ns);
     }
 }
