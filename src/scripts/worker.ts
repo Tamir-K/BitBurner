@@ -1,6 +1,17 @@
 import { NS } from "@ns";
-import { WorkerAction, WORKERS } from "./libs/workers";
+import { WorkerAction } from "./libs/workers";
 
 export async function main(ns: NS): Promise<void> {
-    await WORKERS[ns.args[0] as WorkerAction].run(ns);
+    const arg = ns.args[0] as WorkerAction;
+    switch (arg) {
+        case "hack":
+            await ns.hack();
+            break;
+        case "grow":
+            await ns.grow();
+            break;
+        case "weaken":
+            await ns.weaken();
+            break;
+    }
 }
