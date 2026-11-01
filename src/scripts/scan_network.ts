@@ -1,7 +1,7 @@
 import { NS } from "@ns";
 import { NetworkGraph } from "./libs/network_graph";
 
-function scanNetworkGraph(ns: NS): any {
+function scanNetworkGraph(ns: NS): NetworkGraph {
     const visited = new Set<string>(["home"]);
     const queue = ["home"];
     const adjacencyList: { [key: string]: string[] } = {};
