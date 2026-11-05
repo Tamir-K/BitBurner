@@ -14,6 +14,6 @@ export async function main(ns: NS): Promise<void> {
         ns.tprint(`> run ${ns.getScriptName()} n00dles`);
         return;
     }
-    
-    ns.tprint(findPath(ns, server).join(' -> '))
+
+    ns.tprint('connect ', findPath(ns, server).slice(1).join('; connect '))
 }
