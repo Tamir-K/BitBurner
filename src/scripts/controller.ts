@@ -2,6 +2,7 @@ import { NS } from "@ns";
 import { chooseBestTarget, readTargets, Target } from "./libs/targets";
 import { sleep } from "./libs/sleep";
 import { getWorkerConfig, WORKER_PATH } from "./libs/workers";
+import { getConfig } from "./libs/config";
 
 function getAvailableRam(ns: NS, server: Target): number {
     return server.maxRam - ns.getServerUsedRam(server.name);
@@ -10,7 +11,7 @@ function getAvailableRam(ns: NS, server: Target): number {
 function actOnTarget(ns: NS, bot: Target, target: Target): void {
     const currentSecurity = ns.getServerSecurityLevel(target.name);
     const currentMoney = ns.getServerMoneyAvailable(target.name);
-    const worker = getWorkerConfig(currentSecurity, target.baseSecurity, currentMoney, target.maxMoney);
+    const worker = getWorkerConfig(currentSecurity, target.baseSecurity, currentMoney, target.maxMoney, getConfig(ns));
     const threads = Math.floor(getAvailableRam(ns, bot) / worker.ram);
 
     if (threads <= 0) return;
@@ -21,7 +22,7 @@ function actOnTarget(ns: NS, bot: Target, target: Target): void {
 export async function main(ns: NS): Promise<void> {
     while (true) {
         const bots = await readTargets(ns);
-        const target = await chooseBestTarget(bots, Math.ceil(ns.getHackingLevel() / 2));
+        const target = await chooseBestTarget(bots, Math.ceil(ns.getHackingLevel() / 2), getConfig(ns));
         bots.forEach(bot => actOnTarget(ns, bot, target));
         await sleep(ns);
     }

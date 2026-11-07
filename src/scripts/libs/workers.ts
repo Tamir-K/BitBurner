@@ -1,5 +1,3 @@
-import { config } from "../config";
-
 export const WORKER_PATH = "/scripts/worker.ts";
 
 const WORKER_CONFIGS = {
@@ -15,8 +13,10 @@ export function getWorkerConfig(
     currentSecurity: number,
     baseSecurity: number,
     currentMoney: number,
-    maxMoney: number
+    maxMoney: number,
+    config: any,
 ) {
+    if (config.farmXP) return WORKER_CONFIGS.weaken;
     if (config.share) return WORKER_CONFIGS.share;
     if (currentSecurity > baseSecurity + MIN_SECURITY_OFFSET) return WORKER_CONFIGS.weaken;
     if (currentMoney < maxMoney * MAX_MONEY_PERCENT) return WORKER_CONFIGS.grow;

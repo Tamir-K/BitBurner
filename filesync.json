@@ -1,5 +1,8 @@
 {
-  "allowedFiletypes": [".ts"],
+  "allowedFiletypes": [
+    ".ts",
+    ".json"
+  ],
   "allowDeletingFiles": true,
   "port": 12525,
   "scriptsFolder": "src",
