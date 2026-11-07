@@ -6,8 +6,6 @@ const WORKER_CONFIGS = {
     hack: { action: "hack", ram: 1.7 },
     share: { action: "share", ram: 4 }
 } as const;
-const MIN_SECURITY_OFFSET = 0.5;
-const MAX_MONEY_PERCENT = 0.9;
 
 export function getWorkerConfig(
     currentSecurity: number,
@@ -18,7 +16,7 @@ export function getWorkerConfig(
 ) {
     if (config.farmXP) return WORKER_CONFIGS.weaken;
     if (config.share) return WORKER_CONFIGS.share;
-    if (currentSecurity > baseSecurity + MIN_SECURITY_OFFSET) return WORKER_CONFIGS.weaken;
-    if (currentMoney < maxMoney * MAX_MONEY_PERCENT) return WORKER_CONFIGS.grow;
+    if (currentSecurity > baseSecurity) return WORKER_CONFIGS.weaken;
+    if (currentMoney < maxMoney) return WORKER_CONFIGS.grow;
     return WORKER_CONFIGS.hack;
 }
