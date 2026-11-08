@@ -21,8 +21,7 @@ function mergeOverlappingIntervals(intervals: number[][]): number[][] {
     return result;
 }
 
-function totalPrimesInRange(range: number[]): number {
-    const [low, high] = range;
+function totalPrimesInRange([low, high]: number[]): number {
     if (high < 2) return 0;
 
     const composite = new Uint8Array(high + 1);
@@ -106,12 +105,45 @@ export function subarrayWithMaximumSum(values: readonly number[]): number | unde
     return best;
 }
 
+function uniquePathsInAGridI([rows, cols]: [number, number]): number {
+    if (rows <= 0 || cols <= 0) return 0;
+
+    const total = rows + cols - 2;
+    const k = Math.min(rows - 1, cols - 1);
+    const n = total;
+
+    let result = 1;
+    for (let i = 1; i <= k; i++) {
+        result = (result * (n - k + i)) / i;
+    }
+    return result;
+}
+
+function totalWaysToSumII([target, coins]: [number, number[]]): number {
+    if (target < 0) return 0;
+
+    const dp: number[] = new Array(target + 1).fill(0n);
+    dp[0] = 1;
+
+    for (const coin of new Set(coins)) {
+        if (coin <= 0) continue;
+        for (let s = coin; s <= target; s++) {
+            dp[s] += dp[s - coin];
+        }
+    }
+
+    return dp[target];
+}
+
+
 export async function main(ns: NS): Promise<void> {
     const solvers: Partial<Record<string, (data: any) => unknown>> = {
         [ns.enums.CodingContractName.SubarrayWithMaximumSum]: subarrayWithMaximumSum,
+        [ns.enums.CodingContractName.TotalWaysToSumII]: totalWaysToSumII,
         [ns.enums.CodingContractName.ArrayJumpingGame]: arrayJumpingGame,
         [ns.enums.CodingContractName.MergeOverlappingIntervals]: mergeOverlappingIntervals,
         [ns.enums.CodingContractName.GenerateIPAddresses]: generateIPAddresses,
+        [ns.enums.CodingContractName.UniquePathsInAGridII]: uniquePathsInAGridI,
         [ns.enums.CodingContractName.TotalPrimesInRange]: totalPrimesInRange,
     };
 
@@ -122,7 +154,7 @@ export async function main(ns: NS): Promise<void> {
             if (!solver) continue;
 
             const answer = solver(ns.codingcontract.getData(contract, server));
-            const solved = ns.codingcontract.attempt(answer as any, contract, server);
+            const solved = ns.codingcontract.attempt(answer, contract, server);
             ns.tprint(`${solved ? "Solved" : "Failed"}: ${type} (${contract} on ${server})`);
         }
     }
