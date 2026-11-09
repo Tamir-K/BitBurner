@@ -122,7 +122,7 @@ function uniquePathsInAGridI([rows, cols]: [number, number]): number {
 function totalWaysToSumII([target, coins]: [number, number[]]): number {
     if (target < 0) return 0;
 
-    const dp: number[] = new Array(target + 1).fill(0n);
+    const dp: number[] = new Array(target + 1).fill(0);
     dp[0] = 1;
 
     for (const coin of new Set(coins)) {
