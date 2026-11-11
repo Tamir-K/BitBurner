@@ -119,6 +119,21 @@ function uniquePathsInAGridI([rows, cols]: [number, number]): number {
     return result;
 }
 
+function totalWaysToSum(target: number): number {
+    if (target < 2) return 0;
+
+    const ways: number[] = new Array(target + 1).fill(0);
+    ways[0] = 1;
+
+    for (let part = 1; part <= target; part++) {
+        for (let total = part; total <= target; total++) {
+            ways[total] += ways[total - part];
+        }
+    }
+
+    return ways[target] - 1;
+}
+
 function totalWaysToSumII([target, coins]: [number, number[]]): number {
     if (target < 0) return 0;
 
@@ -135,15 +150,51 @@ function totalWaysToSumII([target, coins]: [number, number[]]): number {
     return dp[target];
 }
 
+function encryptionIIVigenereCipher([plaintext, keyword]: [string, string]): string {
+    const text = plaintext.toUpperCase().replace(/[^A-Z]/g, "");
+    const key = keyword.toUpperCase().replace(/[^A-Z]/g, "");
+
+    if (key.length === 0) {
+        throw new Error("Keyword must contain at least one letter.");
+    }
+
+    let ciphertext = "";
+
+    for (let i = 0; i < text.length; i++) {
+        const p = text.charCodeAt(i) - 65;
+        const k = key.charCodeAt(i % key.length) - 65;
+        ciphertext += String.fromCharCode(((p + k) % 26) + 65);
+    }
+
+    return ciphertext;
+}
+
+function algorithmicStockTraderI(prices: number[]): number {
+    let minPrice = Infinity;
+    let maxProfit = 0;
+
+    for (const price of prices) {
+        if (price < minPrice) {
+            minPrice = price;
+        } else if (price - minPrice > maxProfit) {
+            maxProfit = price - minPrice;
+        }
+    }
+
+    return maxProfit;
+}
 
 export async function main(ns: NS): Promise<void> {
     const solvers: Partial<Record<string, (data: any) => unknown>> = {
         [ns.enums.CodingContractName.SubarrayWithMaximumSum]: subarrayWithMaximumSum,
+        [ns.enums.CodingContractName.TotalWaysToSum]: totalWaysToSum,
         [ns.enums.CodingContractName.TotalWaysToSumII]: totalWaysToSumII,
         [ns.enums.CodingContractName.ArrayJumpingGame]: arrayJumpingGame,
         [ns.enums.CodingContractName.MergeOverlappingIntervals]: mergeOverlappingIntervals,
         [ns.enums.CodingContractName.GenerateIPAddresses]: generateIPAddresses,
+        [ns.enums.CodingContractName.AlgorithmicStockTraderI]: algorithmicStockTraderI,
         [ns.enums.CodingContractName.UniquePathsInAGridII]: uniquePathsInAGridI,
+        [ns.enums.CodingContractName.EncryptionIIVigenereCipher]: encryptionIIVigenereCipher,
         [ns.enums.CodingContractName.TotalPrimesInRange]: totalPrimesInRange,
     };
 
