@@ -23,7 +23,7 @@ function launch(ns: NS, hosts: string[], action: keyof typeof WORKER_CONFIGS,
         const fit = Math.floor((ns.getServerMaxRam(host) - ns.getServerUsedRam(host)) / ram);
         const n = Math.min(fit, remaining);
         if (n > 0) {
-            ns.exec(WORKER_PATH, host, n, action, target, delay);
+            ns.exec(WORKER_PATH, host, { threads: n, ramOverride: ram }, action, target, delay);
             remaining -= n;
         }
     }
