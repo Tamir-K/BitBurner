@@ -1,7 +1,6 @@
 {
   "allowedFiletypes": [
-    ".ts",
-    ".json"
+    ".ts"
   ],
   "allowDeletingFiles": true,
   "port": 12525,

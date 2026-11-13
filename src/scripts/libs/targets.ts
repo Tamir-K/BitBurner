@@ -32,7 +32,6 @@ function scoreTarget(target: Target): number {
     return target.maxMoney / target.baseSecurity;
 }
 
-export async function chooseBestTarget(targets: Target[], hackingLevel: number, config: any): Promise<Target> {
-    if (config.farmXP) return targets.filter(target => target.name == 'n00dles')[0];
+export async function chooseBestTarget(targets: Target[], hackingLevel: number): Promise<Target> {
     return targets.filter(target => target.hackLevel <= hackingLevel).reduce((best, current) => scoreTarget(current) > scoreTarget(best) ? current : best);
 }

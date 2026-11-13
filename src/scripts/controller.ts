@@ -1,7 +1,6 @@
 import { NS } from "@ns";
 import { WORKER_PATH, WORKER_CONFIGS } from "./libs/workers";
 import { readTargets, chooseBestTarget, Target } from "./libs/targets";
-import { getConfig } from "./libs/config";
 
 const HACK_FRACTION = 0.1; // share of max money stolen per batch
 const GAP = 200;           // ms between finish times of consecutive ops
@@ -53,7 +52,7 @@ export async function main(ns: NS): Promise<void> {
     const targets = await readTargets(ns);
     const hosts = getHosts(targets);
 
-    const best = await chooseBestTarget(targets, ns.getHackingLevel() / 2, getConfig(ns));
+    const best = await chooseBestTarget(targets, ns.getHackingLevel() / 4);
     const target = best.name;
 
     ns.tprint(`Selected target: ${target}`);
