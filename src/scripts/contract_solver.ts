@@ -193,7 +193,7 @@ export async function main(ns: NS): Promise<void> {
         [ns.enums.CodingContractName.MergeOverlappingIntervals]: mergeOverlappingIntervals,
         [ns.enums.CodingContractName.GenerateIPAddresses]: generateIPAddresses,
         [ns.enums.CodingContractName.AlgorithmicStockTraderI]: algorithmicStockTraderI,
-        [ns.enums.CodingContractName.UniquePathsInAGridII]: uniquePathsInAGridI,
+        [ns.enums.CodingContractName.UniquePathsInAGridI]: uniquePathsInAGridI,
         [ns.enums.CodingContractName.EncryptionIIVigenereCipher]: encryptionIIVigenereCipher,
         [ns.enums.CodingContractName.TotalPrimesInRange]: totalPrimesInRange,
     };
