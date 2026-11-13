@@ -1,15 +1,18 @@
 import { NS } from "@ns";
 
 export async function main(ns: NS): Promise<void> {
+    const target = ns.args[1] as string;
+    const additionalMsec = Number(ns.args[2] ?? 0);
+
     switch (ns.args[0]) {
         case "hack":
-            await ns.hack(ns.args[1] as string);
+            await ns.hack(target, { additionalMsec });
             break;
         case "grow":
-            await ns.grow(ns.args[1] as string);
+            await ns.grow(target, { additionalMsec });
             break;
         case "weaken":
-            await ns.weaken(ns.args[1] as string);
+            await ns.weaken(target, { additionalMsec });
             break;
         case "share":
             await ns.share();
@@ -18,4 +21,3 @@ export async function main(ns: NS): Promise<void> {
             ns.tprint(`Unknown action: ${ns.args[0]}`);
     }
 }
-
