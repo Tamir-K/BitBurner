@@ -52,7 +52,7 @@ export async function main(ns: NS): Promise<void> {
     const targets = await readTargets(ns);
     const hosts = getHosts(targets);
 
-    const best = await chooseBestTarget(targets, ns.getHackingLevel() / 4);
+    const best = await chooseBestTarget(targets, Math.ceil(ns.getHackingLevel() / 8));
     const target = best.name;
 
     ns.tprint(`Selected target: ${target}`);
