@@ -8,7 +8,7 @@ const GAP = 200;           // ms between finish times of consecutive ops
 type Op = { action: keyof typeof WORKER_CONFIGS; threads: number; delay: number };
 
 // Greedily spread ops across hosts. strict: run nothing unless every op fits.
-function schedule(ns: NS, hosts: Target[], target: string, ops: readonly Op[], strict = true): void {
+function schedule(ns: NS, hosts: Target[], name: string, ops: readonly Op[], strict = true): void {
     const free = hosts.map(h => h.maxRam - ns.getServerUsedRam(h.name));
     const placed: { host: string; op: Op; threads: number }[] = [];
     for (const op of ops) {
@@ -25,15 +25,14 @@ function schedule(ns: NS, hosts: Target[], target: string, ops: readonly Op[], s
         if (remaining > 0 && strict) return;
     }
     for (const { host, op, threads } of placed)
-        ns.exec(WORKER_PATH, host, { threads, ramOverride: WORKER_CONFIGS[op.action].ram }, op.action, target, op.delay);
+        ns.exec(WORKER_PATH, host, { threads, ramOverride: WORKER_CONFIGS[op.action].ram }, op.action, name, op.delay);
 }
 
 async function prep(ns: NS, target: Target, hosts: Target[]): Promise<void> {
-    const name = target.name;
     const wA = ns.weakenAnalyze(1);
     while (true) {
-        const sec = ns.getServerSecurityLevel(name) - target.baseSecurity;
-        const money = ns.getServerMoneyAvailable(name);
+        const sec = ns.getServerSecurityLevel(target.name) - target.baseSecurity;
+        const money = ns.getServerMoneyAvailable(target.name);
         if (sec <= 0.001 && money >= target.maxMoney) return;
 
         // Wipe security first; then grow, covering only that grow's security cost.
@@ -43,15 +42,15 @@ async function prep(ns: NS, target: Target, hosts: Target[]): Promise<void> {
         if (sec > 0.001) {
             ops.push({ action: "weaken", threads: Math.ceil(sec / wA), delay: 0 });
         } else {
-            const growT = Math.ceil(ns.growthAnalyze(name, target.maxMoney / Math.max(money, 1)));
+            const growT = Math.ceil(ns.growthAnalyze(target.name, target.maxMoney / Math.max(money, 1)));
             ops.push(
                 { action: "grow", threads: growT, delay: 0 },
-                { action: "weaken", threads: Math.ceil(ns.growthAnalyzeSecurity(growT, name) / wA), delay: 0 },
+                { action: "weaken", threads: Math.ceil(ns.growthAnalyzeSecurity(growT, target.name) / wA), delay: 0 },
             );
         }
 
-        schedule(ns, hosts, name, ops, false);
-        await ns.sleep(ns.getWeakenTime(name) + 200);
+        schedule(ns, hosts, target.name, ops, false);
+        await ns.sleep(ns.getWeakenTime(target.name) + 200);
     }
 }
 
@@ -60,26 +59,26 @@ export function autocomplete(data: { servers: string[] }): string[] {
 }
 
 export async function main(ns: NS): Promise<void> {
+    let targets = await readTargets(ns);
     // Optional arg: hostname to target. Omitted → best target from targets.json.
     const targetName = ns.args[0] as string | undefined;
-    const best = targetName
+    const target = targetName
         ? createTarget(ns, targetName)
-        : await chooseBestTarget(await readTargets(ns), Math.ceil(ns.getHackingLevel() / 8));
-    const target = best.name;
+        : await chooseBestTarget(targets, Math.ceil(ns.getHackingLevel() / 8));
 
-    ns.tprint(`Selected target: ${target}`);
+    ns.tprint(`Selected target: ${target.name}`);
 
-    await prep(ns, best, await readTargets(ns));
+    await prep(ns, target, targets);
 
-    const tH = ns.getHackTime(target);
-    const tG = ns.getGrowTime(target);
-    const tW = ns.getWeakenTime(target);
+    const tH = ns.getHackTime(target.name);
+    const tG = ns.getGrowTime(target.name);
+    const tW = ns.getWeakenTime(target.name);
     const wA = ns.weakenAnalyze(1);
 
-    const hackT = Math.max(1, Math.floor(HACK_FRACTION / ns.hackAnalyze(target)));
-    const growT = Math.ceil(ns.growthAnalyze(target, 1 / (1 - HACK_FRACTION)));
-    const wH = Math.ceil(ns.hackAnalyzeSecurity(hackT, target) / wA);
-    const wG = Math.ceil(ns.growthAnalyzeSecurity(growT, target) / wA);
+    const hackT = Math.max(1, Math.floor(HACK_FRACTION / ns.hackAnalyze(target.name)));
+    const growT = Math.ceil(ns.growthAnalyze(target.name, 1 / (1 - HACK_FRACTION)));
+    const wH = Math.ceil(ns.hackAnalyzeSecurity(hackT, target.name) / wA);
+    const wG = Math.ceil(ns.growthAnalyzeSecurity(growT, target.name) / wA);
 
     // Finish order: H at tW-GAP, wH at tW, G at tW+GAP, wG at tW+2*GAP
     const ops: Op[] = [
@@ -89,11 +88,12 @@ export async function main(ns: NS): Promise<void> {
         { action: "weaken", threads: wG, delay: 2 * GAP },
     ];
     const batchRam = ops.reduce((sum, op) => sum + op.threads * WORKER_CONFIGS[op.action].ram, 0);
-    ns.tprint(`Batch for ${target}: H=${hackT} wH=${wH} G=${growT} wG=${wG}, ${batchRam.toFixed(1)} GB`);
+    ns.tprint(`Batch for ${target.name}: H=${hackT} wH=${wH} G=${growT} wG=${wG}, ${batchRam.toFixed(1)} GB`);
 
     while (true) {
         // Re-read each loop so servers rooted after startup join the RAM pool.
-        schedule(ns, await readTargets(ns), target, ops);
+        targets = await readTargets(ns);
+        schedule(ns, targets, target.name, ops);
         await ns.sleep(4 * GAP);
     }
 }
