@@ -1,12 +1,14 @@
 import { NS } from "@ns";
 import { WORKER_PATH, WORKER_CONFIGS } from "./libs/workers";
-import { readTargets, chooseBestTarget, Target } from "./libs/targets";
+import { readTargets, chooseBestTarget, createTarget, Target } from "./libs/targets";
 
 const HACK_FRACTION = 0.1; // share of max money stolen per batch
 const GAP = 200;           // ms between finish times of consecutive ops
 
+type Op = { action: keyof typeof WORKER_CONFIGS; threads: number; delay: number };
+
 // Re-read each loop so servers rooted after startup join the RAM pool.
-// [] on a torn read → canPlace fails → retry next period, never a bad batch.
+// [] on a torn read → schedule places nothing → retry next period, never a bad batch.
 async function hostList(ns: NS): Promise<string[]> {
     try {
         return (await readTargets(ns)).filter(t => t.maxRam > 0).map(t => t.name);
@@ -15,101 +17,92 @@ async function hostList(ns: NS): Promise<string[]> {
     }
 }
 
-// Spread `threads` across hosts. Returns false if it could not place them all.
-function launch(ns: NS, hosts: string[], action: keyof typeof WORKER_CONFIGS,
-    threads: number, target: string, delay: number): boolean {
-    const ram = WORKER_CONFIGS[action].ram;
-    let remaining = threads;
-    for (const host of hosts) {
-        if (remaining <= 0) break;
-        const fit = Math.floor((ns.getServerMaxRam(host) - ns.getServerUsedRam(host)) / ram);
-        const n = Math.min(fit, remaining);
-        if (n > 0) {
-            ns.exec(WORKER_PATH, host, { threads: n, ramOverride: ram }, action, target, delay);
-            remaining -= n;
-        }
-    }
-    return remaining <= 0;
-}
-
-// Mirror launch()'s greedy placement against per-host free RAM. Exact, not heuristic.
-function canPlace(ns: NS, hosts: string[], ops: { threads: number; ram: number }[]): boolean {
+// Greedily spread ops across hosts. strict: run nothing unless every op fits.
+function schedule(ns: NS, hosts: string[], target: string, ops: readonly Op[], strict = true): void {
     const free = hosts.map(h => ns.getServerMaxRam(h) - ns.getServerUsedRam(h));
-    for (const { threads, ram } of ops) {
-        let remaining = threads;
+    const placed: { host: string; op: Op; threads: number }[] = [];
+    for (const op of ops) {
+        const ram = WORKER_CONFIGS[op.action].ram;
+        let remaining = op.threads;
         for (let i = 0; i < free.length && remaining > 0; i++) {
             const n = Math.min(Math.floor(free[i] / ram), remaining);
-            free[i] -= n * ram;
-            remaining -= n;
+            if (n > 0) {
+                free[i] -= n * ram;
+                remaining -= n;
+                placed.push({ host: hosts[i], op, threads: n });
+            }
         }
-        if (remaining > 0) return false;
+        if (remaining > 0 && strict) return;
     }
-    return true;
+    for (const { host, op, threads } of placed)
+        ns.exec(WORKER_PATH, host, { threads, ramOverride: WORKER_CONFIGS[op.action].ram }, op.action, target, op.delay);
 }
 
 async function prep(ns: NS, target: Target, hosts: string[]): Promise<void> {
+    const name = target.name;
+    const wA = ns.weakenAnalyze(1);
     while (true) {
-        const sec = ns.getServerSecurityLevel(target.name) - target.baseSecurity;
-        const money = ns.getServerMoneyAvailable(target.name);
+        const sec = ns.getServerSecurityLevel(name) - target.baseSecurity;
+        const money = ns.getServerMoneyAvailable(name);
         if (sec <= 0.001 && money >= target.maxMoney) return;
 
-        const growT = Math.ceil(ns.growthAnalyze(target.name, target.maxMoney / Math.max(money, 1)));
-        const growSec = ns.growthAnalyzeSecurity(growT, target.name);
-        const weakT = Math.ceil((sec + growSec) / ns.weakenAnalyze(1));
+        // Wipe security first; then grow, covering only that grow's security cost.
+        // Never budget weaken threads for a grow that may not fit — that starves
+        // grow and loops on weaken forever. Grow is placed first, so it wins RAM.
+        const ops: Op[] = [];
+        if (sec > 0.001) {
+            ops.push({ action: "weaken", threads: Math.ceil(sec / wA), delay: 0 });
+        } else {
+            const growT = Math.ceil(ns.growthAnalyze(name, target.maxMoney / Math.max(money, 1)));
+            ops.push(
+                { action: "grow", threads: growT, delay: 0 },
+                { action: "weaken", threads: Math.ceil(ns.growthAnalyzeSecurity(growT, name) / wA), delay: 0 },
+            );
+        }
 
-        if (weakT > 0) launch(ns, hosts, "weaken", weakT, target.name, 0);
-        if (growT > 0) launch(ns, hosts, "grow", growT, target.name, 0);
-        await ns.sleep(ns.getWeakenTime(target.name) + 200);
+        schedule(ns, hosts, name, ops, false);
+        await ns.sleep(ns.getWeakenTime(name) + 200);
     }
 }
 
-export async function main(ns: NS): Promise<void> {
-    const targets = await readTargets(ns);
+export function autocomplete(data: { servers: string[] }): string[] {
+    return data.servers;
+}
 
-    const best = await chooseBestTarget(targets, Math.ceil(ns.getHackingLevel() / 8));
+export async function main(ns: NS): Promise<void> {
+    // Optional arg: hostname to target. Omitted → best target from targets.json.
+    const targetName = ns.args[0] as string | undefined;
+    const best = targetName
+        ? createTarget(ns, targetName)
+        : await chooseBestTarget(await readTargets(ns), Math.ceil(ns.getHackingLevel() / 8));
     const target = best.name;
 
     ns.tprint(`Selected target: ${target}`);
 
     await prep(ns, best, await hostList(ns));
 
-    // Timing for one batch (all durations in ms)
     const tH = ns.getHackTime(target);
     const tG = ns.getGrowTime(target);
     const tW = ns.getWeakenTime(target);
+    const wA = ns.weakenAnalyze(1);
 
-    // Thread counts
-    const hackPerThread = ns.hackAnalyze(target);
-    const hackT = Math.max(1, Math.floor(HACK_FRACTION / hackPerThread));
+    const hackT = Math.max(1, Math.floor(HACK_FRACTION / ns.hackAnalyze(target)));
     const growT = Math.ceil(ns.growthAnalyze(target, 1 / (1 - HACK_FRACTION)));
-    const weakenPerThread = ns.weakenAnalyze(1);
-    const wH = Math.ceil(ns.hackAnalyzeSecurity(hackT, target) / weakenPerThread);
-    const wG = Math.ceil(ns.growthAnalyzeSecurity(growT, target) / weakenPerThread);
-
-    const batchRam =
-        hackT * WORKER_CONFIGS.hack.ram +
-        growT * WORKER_CONFIGS.grow.ram +
-        (wH + wG) * WORKER_CONFIGS.weaken.ram;
-
-    ns.tprint(`Batch for ${target}: H=${hackT} wH=${wH} G=${growT} wG=${wG}, ${batchRam.toFixed(1)} GB`);
+    const wH = Math.ceil(ns.hackAnalyzeSecurity(hackT, target) / wA);
+    const wG = Math.ceil(ns.growthAnalyzeSecurity(growT, target) / wA);
 
     // Finish order: H at tW-GAP, wH at tW, G at tW+GAP, wG at tW+2*GAP
-    const batchPeriod = 4 * GAP;
-    const ops = [
-        { threads: hackT, ram: WORKER_CONFIGS.hack.ram },
-        { threads: wH, ram: WORKER_CONFIGS.weaken.ram },
-        { threads: growT, ram: WORKER_CONFIGS.grow.ram },
-        { threads: wG, ram: WORKER_CONFIGS.weaken.ram },
+    const ops: Op[] = [
+        { action: "hack", threads: hackT, delay: tW - GAP - tH },
+        { action: "weaken", threads: wH, delay: 0 },
+        { action: "grow", threads: growT, delay: tW + GAP - tG },
+        { action: "weaken", threads: wG, delay: 2 * GAP },
     ];
+    const batchRam = ops.reduce((sum, op) => sum + op.threads * WORKER_CONFIGS[op.action].ram, 0);
+    ns.tprint(`Batch for ${target}: H=${hackT} wH=${wH} G=${growT} wG=${wG}, ${batchRam.toFixed(1)} GB`);
 
     while (true) {
-        const hosts = await hostList(ns);
-        if (canPlace(ns, hosts, ops)) {
-            launch(ns, hosts, "hack", hackT, target, tW - GAP - tH);
-            launch(ns, hosts, "weaken", wH, target, 0);
-            launch(ns, hosts, "grow", growT, target, tW + GAP - tG);
-            launch(ns, hosts, "weaken", wG, target, 2 * GAP);
-        }
-        await ns.sleep(batchPeriod);
+        schedule(ns, await hostList(ns), target, ops);
+        await ns.sleep(4 * GAP);
     }
 }
