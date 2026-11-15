@@ -7,19 +7,9 @@ const GAP = 200;           // ms between finish times of consecutive ops
 
 type Op = { action: keyof typeof WORKER_CONFIGS; threads: number; delay: number };
 
-// Re-read each loop so servers rooted after startup join the RAM pool.
-// [] on a torn read → schedule places nothing → retry next period, never a bad batch.
-async function hostList(ns: NS): Promise<string[]> {
-    try {
-        return (await readTargets(ns)).filter(t => t.maxRam > 0).map(t => t.name);
-    } catch {
-        return [];
-    }
-}
-
 // Greedily spread ops across hosts. strict: run nothing unless every op fits.
-function schedule(ns: NS, hosts: string[], target: string, ops: readonly Op[], strict = true): void {
-    const free = hosts.map(h => ns.getServerMaxRam(h) - ns.getServerUsedRam(h));
+function schedule(ns: NS, hosts: Target[], target: string, ops: readonly Op[], strict = true): void {
+    const free = hosts.map(h => h.maxRam - ns.getServerUsedRam(h.name));
     const placed: { host: string; op: Op; threads: number }[] = [];
     for (const op of ops) {
         const ram = WORKER_CONFIGS[op.action].ram;
@@ -29,7 +19,7 @@ function schedule(ns: NS, hosts: string[], target: string, ops: readonly Op[], s
             if (n > 0) {
                 free[i] -= n * ram;
                 remaining -= n;
-                placed.push({ host: hosts[i], op, threads: n });
+                placed.push({ host: hosts[i].name, op, threads: n });
             }
         }
         if (remaining > 0 && strict) return;
@@ -38,7 +28,7 @@ function schedule(ns: NS, hosts: string[], target: string, ops: readonly Op[], s
         ns.exec(WORKER_PATH, host, { threads, ramOverride: WORKER_CONFIGS[op.action].ram }, op.action, target, op.delay);
 }
 
-async function prep(ns: NS, target: Target, hosts: string[]): Promise<void> {
+async function prep(ns: NS, target: Target, hosts: Target[]): Promise<void> {
     const name = target.name;
     const wA = ns.weakenAnalyze(1);
     while (true) {
@@ -79,7 +69,7 @@ export async function main(ns: NS): Promise<void> {
 
     ns.tprint(`Selected target: ${target}`);
 
-    await prep(ns, best, await hostList(ns));
+    await prep(ns, best, await readTargets(ns));
 
     const tH = ns.getHackTime(target);
     const tG = ns.getGrowTime(target);
@@ -102,7 +92,8 @@ export async function main(ns: NS): Promise<void> {
     ns.tprint(`Batch for ${target}: H=${hackT} wH=${wH} G=${growT} wG=${wG}, ${batchRam.toFixed(1)} GB`);
 
     while (true) {
-        schedule(ns, await hostList(ns), target, ops);
+        // Re-read each loop so servers rooted after startup join the RAM pool.
+        schedule(ns, await readTargets(ns), target, ops);
         await ns.sleep(4 * GAP);
     }
 }
