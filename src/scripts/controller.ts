@@ -1,6 +1,6 @@
 import { NS } from "@ns";
 import { WORKER_PATH, WORKER_CONFIGS } from "./libs/workers";
-import { readTargets, chooseBestTarget, createTarget, Target } from "./libs/targets";
+import { readTargets, chooseBestTarget, Target, TARGET_FILE } from "./libs/targets";
 
 const HACK_FRACTION = 0.1; // max share of money stolen per batch
 const GAP = 200;           // ms between finish times of consecutive ops
@@ -114,8 +114,9 @@ export async function main(ns: NS): Promise<void> {
     // Optional arg: hostname to target. Omitted → best target from targets.json.
     const targetName = ns.args[0] as string | undefined;
     const target = targetName
-        ? createTarget(ns, targetName)
+        ? targets.find(t => t.name === targetName)
         : await chooseBestTarget(targets, Math.ceil(ns.getHackingLevel() / 8));
+    if (!target) return ns.tprint(`Target '${targetName}' not in ${TARGET_FILE}; run the target scanner first.`);
 
     ns.tprint(`Selected target: ${target.name}`);
 
